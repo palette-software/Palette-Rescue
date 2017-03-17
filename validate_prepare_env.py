@@ -17,20 +17,22 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 import logging
-import threading
-import Queue
-import sys
 
-def prepare_remote_server(remote_server, pg_pass, dr_ip, start_afterwards=False):
+
+def prepare_remote_server(remote_server, pg_pass, dr_ip, do_not_stop_tablbeau_server_but_postgres=False,
+                          start_afterwards=False):
     logging.info("Preparing Tableau Server on %s..." % remote_server.host)
-    logging.info("Stopping Tableau Server on %s..." % remote_server.host)
-    remote_server.stop()
+    if not do_not_stop_tablbeau_server_but_postgres:
+        logging.info("Stopping Tableau Server on %s..." % remote_server.host)
+        remote_server.stop()
     logging.info("Preparing the database of Tableau Server on %s..." % remote_server.host)
     remote_server.prepare_postgres_config()
     remote_server.change_db_pass("tableau", pg_pass)
+    if do_not_stop_tablbeau_server_but_postgres:
+        remote_server.stop_postgres()
     remote_server.alter_user_role_replication(pg_user="tableau")
     remote_server.enable_user_replication_connection(pg_user="tableau", ip=dr_ip)
-    if start_afterwards:
+    if (not do_not_stop_tablbeau_server_but_postgres) and start_afterwards:
         logging.info("Starting Tableau Server on %s..." % remote_server.host)
         remote_server.start()
 
@@ -103,15 +105,16 @@ def prepare_tableau_dr(env_manager, source_server, target_server, dr_ip):
                     target_server)
 
     # Preparing source Tableau Server
-    prepare_remote_server(source_server,
-                          env_manager.pg_password,
-                          dr_ip,
-                          True)
+    prepare_remote_server(remote_server=source_server,
+                          pg_pass=env_manager.pg_password,
+                          dr_ip=dr_ip,
+                          do_not_stop_tablbeau_server_but_postgres=True,
+                          start_afterwards=True)
 
     if target_server is not None:
-        prepare_remote_server(target_server,
-                              env_manager.pg_password,
-                              dr_ip)
+        prepare_remote_server(remote_server=target_server,
+                              pg_pass=env_manager.pg_password,
+                              dr_ip=dr_ip)
 
     logging.info("Creating a basebackup for the source Tableau Server and starting it afterwards...")
     env_manager.basebackup_start_source_postgres(source_server=source_server)

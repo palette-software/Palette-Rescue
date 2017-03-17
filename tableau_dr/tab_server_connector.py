@@ -410,7 +410,7 @@ class TableauServerConnector:
                 time.sleep(wait_before_retry)
             #endif
             try:
-                #logging.warning("%s> %s" % (self.host, command))
+                logging.warning("%s> %s" % (self.host, command))
                 cmd = run_cmd(command)
             except winrm_exc.BasicAuthDisabledError:
                 raise TableauServerConnectorException("Basic auth is not enabled on {host}!".format(host=self.host))
@@ -596,10 +596,10 @@ class TableauServerConnector:
                              stderr=subprocess.PIPE,
                              stdin=subprocess.PIPE)
 
-        #logging.warning("SHELL cmd> %s" % cmd_str)
+        logging.warning("SHELL cmd> %s" % cmd_str)
         stdout, stderr = p.communicate(input=stdin)
-        #logging.warning("SHELL out> %s" % stdout)
-        #logging.warning("SHELL err> %s" % stderr)
+        logging.warning("SHELL out> %s" % stdout)
+        logging.warning("SHELL err> %s" % stderr)
 
         if p.returncode != 0:
             raise TableauServerConnectorException(

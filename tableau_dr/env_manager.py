@@ -38,6 +38,7 @@ import re
 import utils
 import uuid
 
+
 # Custom exceptions
 class ValidateEnvironmentException(Exception):
     pass
@@ -91,7 +92,6 @@ class EnvironmentManager:
             logging.debug("The mount directory for the target cluster has been set to %s" %
                           self.cluster_target_mount_full_path)
 
-
         self.sync_full_path = os.path.join(sync_root_dir, mount_dir)
         logging.debug("The sync directory has been set to %s" % self.sync_full_path)
 
@@ -110,7 +110,7 @@ class EnvironmentManager:
         self.pg_port = pg_port
         logging.debug("Postgres port has been set to %s" % pg_port)
 
-        self.pg_data_root_dir=pg_data_root_dir
+        self.pg_data_root_dir = pg_data_root_dir
         logging.debug("Postgres data directory root has been set to %s" % self.pg_data_root_dir)
 
         self.cluster_source_pg_data_dir = cluster_source_pg_data_dir
@@ -153,7 +153,6 @@ class EnvironmentManager:
         else:
             self.dataengine_dir = None
             self.filestore_temp_mount_dir = None
-        #endif
 
         self.is_reverse = is_reverse
         logging.debug("Reverse switch is set to %s" % is_reverse)
@@ -277,16 +276,16 @@ class EnvironmentManager:
             # Ensure that there is replication between source and sync
             source_sync_rsync_job = d.RSYNC_TEMPLATE.format(source_path=utils.add_trailing_slash(source_path),
                                                             destination_path=utils.remove_trailing_slash(sync_path),
-                                                            rescue_dir = os.path.split(self.backups_dir)[0],
+                                                            rescue_dir=os.path.split(self.backups_dir)[0],
                                                             uuid=uuid.uuid4())
             jobs_to_add.append(source_sync_rsync_job)
 
             if target_path is not None:
                 sync_target_rsync_job = d.RSYNC_TEMPLATE.format(source_path=utils.add_trailing_slash(sync_path),
                                                                 destination_path=utils.remove_trailing_slash(
-                                                                    target_path),
-                                                                rescue_dir = os.path.split(self.backups_dir)[0],
-                                                            uuid=uuid.uuid4())
+                                                                target_path),
+                                                                rescue_dir=os.path.split(
+                                                                    self.backups_dir)[0], uuid=uuid.uuid4())
                 jobs_to_add.append(sync_target_rsync_job)
 
         # Rsync between prod and sync config dir
@@ -298,7 +297,7 @@ class EnvironmentManager:
 
         source_sync_rsync_job = d.RSYNC_TEMPLATE.format(source_path=utils.add_trailing_slash(config_path_prod),
                                                         destination_path=utils.remove_trailing_slash(config_path_sync),
-                                                        rescue_dir = os.path.split(self.backups_dir)[0],
+                                                        rescue_dir=os.path.split(self.backups_dir)[0],
                                                         uuid=uuid.uuid4())
         jobs_to_add.append(source_sync_rsync_job)
 
@@ -378,17 +377,16 @@ class EnvironmentManager:
                 os.makedirs(dir_path)
 
         dirs_to_chmod = [
-            [self.pg_data_root_dir,0775],
-            [self.cluster_target_pg_data_dir,0775],
+            [self.pg_data_root_dir, 0775],
+            [self.cluster_target_pg_data_dir, 0775],
                          ]
 
         dirs_to_chmod = filter(lambda x: x[0] is not None,
                                dirs_to_chmod)
         for chmod_list in dirs_to_chmod:
             if os.path.exists(chmod_list[0]):
-                logging.debug("Applying chmod {chmod} to {file}...".format(chmod=chmod_list[1],
-                                                                        file=chmod_list[0]))
-                os.chmod(chmod_list[0],chmod_list[1])
+                logging.debug("Applying chmod {chmod} to {file}...".format(chmod=chmod_list[1], file=chmod_list[0]))
+                os.chmod(chmod_list[0], chmod_list[1])
 
         logging.debug("Tableau DR's directory tree has been successfully created!")
 
@@ -445,8 +443,7 @@ class EnvironmentManager:
                 logging.debug("Replication between source and sync dir seems to make sense")
 
         if self.cluster_target_mount_full_path is not None:
-            cluster_cron_jobs_target = filter(lambda x: x.is_enabled(),  # Make sure job is enabled
-                                              cluster_cron_jobs_target)
+            cluster_cron_jobs_target = filter(lambda x: x.is_enabled(), cluster_cron_jobs_target)
             if len(cluster_cron_jobs_target) == 0:
                 raise ValidateEnvironmentException(
                     "Even though there is a cron job for replication between sync and target dir, it is not enabled!")
@@ -608,8 +605,8 @@ class EnvironmentManager:
         logging.debug("Found the following replication jobs between target and sync: %s" % cluster_cron_jobs_target)
         for item in cluster_cron_jobs_target_cmd:
             switched_cron_cmd = utils.switch_direction_of_rsync(rsync_cmd_str=item,
-                                                                 source_dir=self.sync_full_path,
-                                                                 target_dir=self.cluster_target_mount_full_path)
+                                                                source_dir=self.sync_full_path,
+                                                                target_dir=self.cluster_target_mount_full_path)
             if switched_cron_cmd not in user_cron_cmds:
                 switched_cron_job = user_crons.new(command=switched_cron_cmd)
                 switched_cron_job.setall('* * * * *')
@@ -634,8 +631,8 @@ class EnvironmentManager:
         # Switch direction to Sync --> Source
         for item in cluster_cron_jobs_source_cmd:
             switched_cron_cmd = utils.switch_direction_of_rsync(rsync_cmd_str=item,
-                                                                 source_dir=self.cluster_source_mount_full_path,
-                                                                 target_dir=self.sync_full_path)
+                                                                source_dir=self.cluster_source_mount_full_path,
+                                                                target_dir=self.sync_full_path)
             if switched_cron_cmd not in user_cron_cmds:
                 switched_cron_job = user_crons.new(command=switched_cron_cmd)
                 switched_cron_job.setall('* * * * *')
@@ -1155,9 +1152,25 @@ class EnvironmentManager:
                                                 pg_data_dir=pg_data_dir,
                                                 pg_user=remote_pg_user,
                                                 pg_pass=remote_pg_password)
-        self.__execute_cmd(cmd_str=backup_cmd,
-                           as_unix_pg_user=True,
-                           env={"LD_LIBRARY_PATH": os.path.join(self.pg_absolute_dir, "lib")})
+        tmp_counter = 0
+        tmp_retries = 3
+        while tmp_counter < tmp_retries+1:
+            if tmp_counter >= tmp_retries:
+                logging.debug("Giving up.")
+                exit(1)
+            tmp_counter += 1
+            try:
+                logging.debug("Executing Tableau Postgres Repository pgdump is in progress...")
+                self.__execute_cmd(cmd_str=backup_cmd,
+                                   as_unix_pg_user=True,
+                                   env={"LD_LIBRARY_PATH": os.path.join(self.pg_absolute_dir, "lib")})
+            except EnvironmentManagerException as e:
+                logging.debug("Error occurred: " + e.message)
+                logging.debug("Waiting for 15 sec...")
+                time.sleep(15)
+                logging.debug("Retrying...")
+            else:
+                break
 
         if not initial:
             # Replacing config file contents in data dir from the temporary files
@@ -1395,8 +1408,8 @@ class EnvironmentManager:
                 elif os.listdir(mount_dir) != []:
                     if mount_dir == self.sync_full_path:
                         if initial:
-                            logging.debug(
-                                "Sync directory is not empty! This is most likely the sign of an earlier Tableau DR installation.")
+                            logging.debug("Sync directory is not empty! This is most likely the sign of an earlier "
+                                          "Tableau DR installation.")
                     else:
                         raise EnvironmentManagerException("The directory (%s) is not empty and it's "
                                                           "likely not caused by Tableau DR! Please make sure to run"
@@ -1418,7 +1431,7 @@ class EnvironmentManager:
                                                                  domain=source_server.domain)
         open(prod_smb_cred_file_abs_path, "w").write(smb_cred_prod_content)
 
-        mount_rights="ro"
+        mount_rights = "ro"
         create_prod_mount_cmd = d.MOUNT_CIFS_CMD_DATA.format(server_host=source_server.host,
                                                              mount_abs_path=self.cluster_source_mount_full_path,
                                                              cred_file_path=prod_smb_cred_file_abs_path,
@@ -1437,11 +1450,11 @@ class EnvironmentManager:
 
             mount_rights = "rw"
             create_dr_mount_cmd = d.MOUNT_CIFS_CMD_DATA.format(server_host=target_server.host,
-                                                          mount_abs_path=self.cluster_target_mount_full_path,
-                                                          cred_file_path=dr_smd_cred_file_abs_path,
-                                                          rescue_user=self.rescue_user,
-                                                          failover_group=self.rescue_user,
-                                                          rights=mount_rights)
+                                                               mount_abs_path=self.cluster_target_mount_full_path,
+                                                               cred_file_path=dr_smd_cred_file_abs_path,
+                                                               rescue_user=self.rescue_user,
+                                                               failover_group=self.rescue_user,
+                                                               rights=mount_rights)
 
             if os.listdir(self.cluster_target_mount_full_path) == []:
                 self.__execute_cmd(create_dr_mount_cmd)
@@ -1463,7 +1476,7 @@ class EnvironmentManager:
         logging.debug("Postgres management operation is set to %s." % operation)
         manage_cmd = d.MANAGE_PG_COMMAND.format(pg_dir=pg_absolute_dir,
                                                 operation=operation,
-                                                 pg_data_dir=pg_data_dir,
+                                                pg_data_dir=pg_data_dir,
                                                 pg_data_dir_short=os.path.split(pg_data_dir)[1])
         try:
             self.__execute_cmd(cmd_str=manage_cmd,
@@ -1501,8 +1514,8 @@ class EnvironmentManager:
 
         popen_as_shell = False
 
-        #If rescue_user runs this command as postgresql user, modify the command according
-        #to it's sudoer status.
+        # If rescue_user runs this command as postgresql user, modify the command according
+        # to it's sudoer status.
         if as_unix_pg_user:
             if (True == self.is_sudoer):
                 cmd_str = d.CMD_AS_PG_USER.format(cmd=cmd_str,
@@ -1513,13 +1526,14 @@ class EnvironmentManager:
                 popen_as_shell=True
                 # endif
 
-        # If rescue_user is not sudoer and runs this command as itself, strip the sudo from the beginning of ehe command line, is any.
+        # If rescue_user is not sudoer and runs this command as itself,
+        # strip the sudo from the beginning of ehe command line, is any.
         else:
             if not self.is_sudoer:
                 cmd_str = re.sub('^sudo ', '', cmd_str.rstrip())
-        #endif
+        # endif
 
-        #logging.warning("SHELL as %s cmd> %s" % (("postgresql" if as_unix_pg_user else self.rescue_user), cmd_str))
+        logging.warning("SHELL as %s cmd> %s" % (("postgresql" if as_unix_pg_user else self.rescue_user), cmd_str))
 
         if popen_as_shell:
             p = subprocess.Popen(cmd_str,
@@ -1532,16 +1546,16 @@ class EnvironmentManager:
                                  preexec_fn=demote(pwd.getpwnam('postgresql')[2]))
         else:
             p = subprocess.Popen(shlex.split(cmd_str),
-                             stdout=subprocess.PIPE,
-                             stderr=subprocess.PIPE,
-                             stdin=subprocess.PIPE,
-                             cwd=cwd,
-                             env=env)
+                                 stdout=subprocess.PIPE,
+                                 stderr=subprocess.PIPE,
+                                 stdin=subprocess.PIPE,
+                                 cwd=cwd,
+                                 env=env)
 
         stdout, stderr = p.communicate(input=stdin)
 
-        #logging.warning("SHELL as %s out> %s" % (("postgresql" if as_unix_pg_user else self.rescue_user), stdout))
-        #logging.warning("SHELL as %s err> %s" % (("postgresql" if as_unix_pg_user else self.rescue_user), stderr))
+        logging.warning("SHELL as %s out> %s" % (("postgresql" if as_unix_pg_user else self.rescue_user), stdout))
+        logging.warning("SHELL as %s err> %s" % (("postgresql" if as_unix_pg_user else self.rescue_user), stderr))
 
         if p.returncode != 0:
             raise EnvironmentManagerException(
@@ -1606,13 +1620,13 @@ class EnvironmentManager:
     def __validate_pg_log_dir(self):
         logging.debug("Validating PG logs dir...")
 
-        check_dir_exists_cmd = "ls {pg_absolute_dir}/logs".format (pg_absolute_dir = d.PG_ABSOLUTE_DIR)
+        check_dir_exists_cmd = "ls {pg_absolute_dir}/logs".format(pg_absolute_dir=d.PG_ABSOLUTE_DIR)
         try:
             self.__execute_cmd(cmd_str=check_dir_exists_cmd,
                                as_unix_pg_user=True)
         except EnvironmentManagerException:
             logging.debug("The Postgres logs directory does not exist! Creating it...")
-            pg_logs_mkdir_cmd = "mkdir {pg_absolute_dir}/logs".format (pg_absolute_dir = d.PG_ABSOLUTE_DIR)
+            pg_logs_mkdir_cmd = "mkdir {pg_absolute_dir}/logs".format(pg_absolute_dir=d.PG_ABSOLUTE_DIR)
             self.__execute_cmd(cmd_str=pg_logs_mkdir_cmd,
                                as_unix_pg_user=True)
 
@@ -1692,8 +1706,8 @@ class EnvironmentManager:
                                                                pwd=remote_pg_password)
         if append:
             overwrite_pgpass_cmd = "echo \"{pgpass_file_new_content}\" >> {pgpass_absolute_path}".format(
-                pgpass_absolute_path = pgpass_absolute_path,
-                pgpass_file_new_content = pgpass_file_new_content)
+                pgpass_absolute_path=pgpass_absolute_path,
+                pgpass_file_new_content=pgpass_file_new_content)
         else:
             overwrite_pgpass_cmd = "echo \"{pgpass_file_new_content}\" > {pgpass_absolute_path}".format(
                 pgpass_absolute_path=pgpass_absolute_path,
@@ -1715,15 +1729,17 @@ class EnvironmentManager:
 
         pg_host = "localhost"
         logging.debug("Testing connection to local Postgres at %s:%s" % (pg_host, pg_port))
-        command = "{abs_dir}/bin/psql -h {host} -p {port} -U {user} {database} --no-password".format(abs_dir=pg_absolute_dir,
-                                                                                             host=pg_host,
-                                                                                             port=pg_port,
-                                                                                             user=pg_user,
-                                                                                             database=pg_database)
+        command = "{abs_dir}/bin/psql -h {host}" \
+                  " -p {port} -U {user} {database}" \
+                  " --no-password".format(abs_dir=pg_absolute_dir,
+                                          host=pg_host,
+                                          port=pg_port,
+                                          user=pg_user,
+                                          database=pg_database)
         command = d.CMD_AS_PG_USER.format(cmd=command,
                                           pg_dir=self.pg_absolute_dir)
 
-        #logging.warning("SHELL cmd> %s" % command)
+        logging.warning("SHELL cmd> %s" % command)
         psql_proc = subprocess.Popen(shlex.split(command),
                                      stdin=subprocess.PIPE,
                                      stdout=subprocess.PIPE,
@@ -1755,14 +1771,16 @@ class EnvironmentManager:
 
         logging.debug("Testing connection to Postgres at %s:%s" % (pg_host, pg_port))
         pg_host = source_server.host
-        command = "{abs_dir}/bin/psql -h {host} -p {port} -U {user} {database} --no-password".format(abs_dir=pg_absolute_dir,
-                                                                                             host=pg_host,
-                                                                                             port=pg_port,
-                                                                                             user=pg_user,
-                                                                                             database=pg_database)
+        command = "{abs_dir}/bin/psql -h {host}" \
+                  " -p {port} -U {user} {database}" \
+                  " --no-password".format(abs_dir=pg_absolute_dir,
+                                          host=pg_host,
+                                          port=pg_port,
+                                          user=pg_user,
+                                          database=pg_database)
         command = d.CMD_AS_PG_USER.format(cmd=command,
                                           pg_dir=self.pg_absolute_dir)
-        #logging.warning("SHELL cmd> %s" % command)
+        logging.warning("SHELL cmd> %s" % command)
 
         psql_proc = subprocess.Popen(shlex.split(command),
                                      stdin=subprocess.PIPE,
@@ -1894,6 +1912,6 @@ class EnvironmentManager:
         logging.debug("Deleting %s..." % temp_pg_dir)
         try:
             self.__execute_cmd("rm -rf %s" % utils.remove_trailing_slash(temp_pg_dir))
-        except Exception,e:
+        except Exception, e:
             raise e
-    #end def
+    # end def

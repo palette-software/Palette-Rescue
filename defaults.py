@@ -27,8 +27,8 @@ SERVER_DATA_KEYS = ["host",
 TABLEAU_DATA_KEYS = ["install_dir",
                      "version"]
 RESCUE_ENV_KEYS = ["rescue_user",
-                     "rescue_dir",
-                     "postgres"]
+                   "rescue_dir",
+                   "postgres"]
 RECOVERY_POSTGRES_KEYS = ["password"]
 
 REMOTE_PG_CONNECT_MAX_RETRIES = 5
@@ -60,7 +60,8 @@ PGPASS_FILE_CONTENT = "{host}:{port}:{database}:{user}:{pwd}"
 WORKGROUP_PG_DUMP_FILE = "workgroup.pg_dump"
 CMD_AS_PG_USER = "sudo LD_LIBRARY_PATH={pg_dir}/lib -i -H -u postgresql bash -c '{cmd}'"
 CMD_ROOT_AS_PG_USER = "export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:{pg_dir}/lib"
-MANAGE_PG_COMMAND = "{pg_dir}/bin/pg_ctl {operation} -D {pg_data_dir} -l {pg_dir}/logs/postgresql_{pg_data_dir_short}.log"
+MANAGE_PG_COMMAND = "{pg_dir}/bin/pg_ctl {operation} -D {pg_data_dir}" \
+                    " -l {pg_dir}/logs/postgresql_{pg_data_dir_short}.log"
 PG_BASEBACKUP_CMD = "{pg_dir}/bin/pg_basebackup -h {host} -p {pg_port} -D {pg_data_dir} -U {pg_user} --no-password"
 BACKUP_SQL_FILE = 'backup.sql'
 PG_DUMP_COMMAND = "{pg_dir}/bin/pg_dump -h localhost -U {user} -d {database} -F {dump_format} -Z 0 -c -C"
@@ -93,19 +94,24 @@ REPLICATION_DIRS = ["data/tabsvc/httpd/htdocs/webdataconnectors",
 
 SYNC_ONLY_REPLICATION_DIRS = ["config"]
 
-#RSYNC_TEMPLATE = "sh -c '/usr/bin/flock -w 1 {rescue_dir}/cron.lock{uuid} rsync -a -v --delete {source_path} {destination_path} | pv -l -s $(rsync -a -v --delete {source_path} {destination_path} --dry-run | wc -l) > /dev/null'"
-RSYNC_TEMPLATE = "/usr/bin/flock -w 1 {rescue_dir}/cron.lock{uuid} rsync -a -v --delete {source_path} {destination_path}"
+# RSYNC_TEMPLATE = "sh -c '/usr/bin/flock -w 1 {rescue_dir}/cron.lock{uuid} rsync -a -v --delete
+#  {source_path} {destination_path}
+#  | pv -l -s $(rsync -a -v --delete {source_path} {destination_path} --dry-run | wc -l) > /dev/null'"
+RSYNC_TEMPLATE = "/usr/bin/flock -w 1 {rescue_dir}/cron.lock{uuid} rsync -a -v --delete " \
+                 "{source_path} {destination_path}"
 
-MOUNT_CIFS_CMD_DATA = "sudo mount.cifs -v //{server_host}/tableau_data {mount_abs_path} -o credentials={cred_file_path},uid={rescue_user},gid={rescue_user},{rights}"
-MOUNT_CIFS_CMD_FILES = "sudo mount.cifs -v //{server_host}/tableau_files {mount_abs_path} -o credentials={cred_file_path},uid={rescue_user},gid={rescue_user},{rights}"
+MOUNT_CIFS_CMD_DATA = "sudo mount -t cifs -v //{server_host}/tableau_data {mount_abs_path} " \
+                      "-o credentials={cred_file_path},uid={rescue_user},gid={rescue_user},{rights}"
+MOUNT_CIFS_CMD_FILES = "sudo mount -t cifs -v //{server_host}/tableau_files {mount_abs_path} " \
+                       "-o credentials={cred_file_path},uid={rescue_user},gid={rescue_user},{rights}"
 UMOUNT_CMD = "sudo umount {mount_abs_path}"
 
 # TODO: Handle different Tableau versions!
-PG_BUILD_PROCEDURE = [
-    "./configure --prefix={prefix} --disable-rpath --enable-thread-safety --enable-integer-datetimes --enable-nls --with-ldap --with-openssl --with-libxml --with-libxslt --with-tcl --with-perl --with-python --enable-float8-byval",
-     "make",
-     "sudo make install"
-]
+PG_BUILD_PROCEDURE = ["./configure --prefix={prefix} --disable-rpath --enable-thread-safety --enable-integer-datetimes "
+                      "--enable-nls --with-ldap --with-openssl --with-libxml --with-libxslt --with-tcl --with-perl "
+                      "--with-python --enable-float8-byval",
+                      "make",
+                      "sudo make install"]
 
 # TODO: Validate user creation steps! Are the steps below correct?
 ADD_PG_USER_CMDS = [

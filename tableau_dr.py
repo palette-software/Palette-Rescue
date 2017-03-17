@@ -70,7 +70,7 @@ def initialize_logger(config_file_path, cluster_name):
 
     # create console handler and set level to info
     handler = logging.StreamHandler()
-    handler.setLevel(logging.INFO if not os.environ.get('tableau_dr_DEBUG') else logging.DEBUG)
+    handler.setLevel(logging.DEBUG if not os.environ.get('tableau_dr_DEBUG') else logging.DEBUG)
     formatter = logging.Formatter(LOG_FORMAT)
     handler.setFormatter(formatter)
     logger.addHandler(handler)
