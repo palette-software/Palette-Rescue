@@ -12,4 +12,4 @@ multiprocessing==2.6.2.1
 PyInstaller==3.6
 requests-ntlm==1.0.0
 bs4==0.0.1
-lxml==4.6.5
+lxml==4.9.1
